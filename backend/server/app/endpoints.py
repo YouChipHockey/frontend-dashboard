@@ -262,7 +262,7 @@ def start_match():
             redis_key = PLAYER_DATA_KEY_FORMAT.format(player.id)
             redis_client.delete(redis_key)
         
-        scheduler.add_job(generate_new_data_redis, 'interval', seconds=1)
+        # scheduler.add_job(generate_new_data_redis, 'interval', seconds=1)
         scheduler.add_job(process_redis_data, 'interval', seconds=1)
         
     return jsonify({"message": "Match started"})
