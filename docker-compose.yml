@@ -7,8 +7,6 @@ services:
     environment:
       - FLASK_ENV=development
       - SQLALCHEMY_DATABASE_URI=your_database_uri
-    depends_on:
-      - database
 
   frontend:
     build: ./frontend
