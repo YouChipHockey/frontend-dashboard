@@ -69,24 +69,11 @@ def generate_new_data_redis():
     with app.app_context():
         for player in players_data:
             if match_running:
-                player.lastX = player.x
-                player.lastY = player.y
-
                 player.x += random.uniform(-50, 50)
                 player.y += random.uniform(-50, 50)
 
                 player.x = max(0, min(player.x, field_width))
                 player.y = max(0, min(player.y, field_height))
-
-                distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
-                player.dist += int(distance)
-
-                elapsed_time = current_time - match_start_time
-                player.speed = int(distance / elapsed_time) if elapsed_time > 0 else 0
-
-                player.time = int(elapsed_time)
-
-                update_square_counts(player)
 
                 # Prepare player data for Redis
                 redis_key = str(current_time)
@@ -105,13 +92,17 @@ def process_redis_data():
 
     with app.app_context():
         # Get all keys in Redis matching the pattern '*'
-        redis_keys = redis_client.zrevrange(PLAYER_DATA_KEY_FORMAT.format('*'), 0, -1)
+        redis_keys = redis_client.keys('*')
+        print("1. ", time.time())
+        print("2. ",  max([round(float(k.decode())) for k in redis_keys]))
 
-        for redis_key in redis_keys:
-            player_data_redis = redis_client.hgetall(redis_key)
+        redis_key = max([round(float(k.decode())) for k in redis_keys])
+        # for redis_key in redis_keys:
+        player_data_redis = redis_client.hgetall(str(redis_key))
+        print(player_data_redis)
 
             # Check if player data exists in Redis
-            if player_data_redis:
+        if player_data_redis:
                 timestamp = int(redis_key)
 
                 # Only update if the timestamp is after the match start time
@@ -122,6 +113,9 @@ def process_redis_data():
                     if player:
                         player.x = float(player_data_redis.get("x", 0))
                         player.y = float(player_data_redis.get("y", 0))
+
+                        player.lastX = player.x
+                        player.lastY = player.y
 
                         distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
                         player.dist += int(distance)
@@ -143,6 +137,18 @@ def process_redis_data():
 
                         # Delete the processed data from Redis
                         redis_client.zrem(PLAYER_DATA_KEY_FORMAT.format('*'), redis_key)
+
+                        existing_player = Player.query.get(player.id)
+                        if existing_player:
+                            # Применяем изменения
+                            existing_player.lastX = player.lastX
+                            existing_player.lastY = player.lastY
+                            existing_player.x = player.x
+                            existing_player.y = player.y
+                            existing_player.dist = player.dist
+                            existing_player.speed = player.speed
+                            existing_player.time = player.time
+
 
         try:
             db.session.commit()
