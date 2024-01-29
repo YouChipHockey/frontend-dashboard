@@ -8,7 +8,7 @@ const MatchControl = () => {
 
   const startMatch = async () => {
     try {
-      await fetch('http://127.0.0.1:5000/api/start_match', { method: 'POST' });
+      await fetch('http://91.108.241.205:5000/api/start_match', { method: 'POST' });
       setMatchStartTime(new Date());
       setMatchStatus('Match Started');
     } catch (error) {
@@ -18,7 +18,7 @@ const MatchControl = () => {
 
   const endMatch = async () => {
     try {
-      await fetch('http://127.0.0.1:5000/api/end_match', { method: 'POST' });
+      await fetch('http://91.108.241.205:5000/api/end_match', { method: 'POST' });
       setMatchStartTime(null);
       setMatchStatus('Match Ended');
     } catch (error) {

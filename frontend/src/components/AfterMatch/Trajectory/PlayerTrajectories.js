@@ -9,7 +9,7 @@ const PlayerTrajectories = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/trajectories');
+        const response = await fetch('http://91.108.241.205:5000/api/trajectories');
         if (response.ok) {
           const trajectoriesData = await response.json();
           setPlayerTrajectories(trajectoriesData);
