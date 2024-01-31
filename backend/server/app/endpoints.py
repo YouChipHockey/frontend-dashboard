@@ -146,28 +146,32 @@ def process_redis_data():
                 player = next((p for p in players_data if p.id == player_id), None)
 
                 if player:
-                    x_60x30 = float(data['x']) if data['x'] != 'NaN' and data['x'] != '-Inf' else 0
-                    y_60x30 = float(data['y']) if data['y'] != 'NaN' and data['y'] != '-Inf' else 0
+                    try:
+                        x_60x30 = float(data['x']) if data['x'] != 'NaN' and data['x'] != '-Inf' else 0
+                        y_60x30 = float(data['y']) if data['y'] != 'NaN' and data['y'] != '-Inf' else 0
 
-                    print(x_60x30, y_60x30)
+                        print(x_60x30, y_60x30)
 
                     # Конвертация координат в формат 1280x720
-                    x_1280x720 = (y_60x30 / 60) * 1280
-                    y_1280x720 = (x_60x30 / 30) * 720
+                        x_1280x720 = (y_60x30 / 60) * 1280
+                        y_1280x720 = (x_60x30 / 30) * 720
                     
-                    player.x = 1280 - x_1280x720
-                    player.y = 720 - y_1280x720
+                        player.x = 1280 - x_1280x720
+                        player.y = 720 - y_1280x720
 
-                    player.lastX = player.x
-                    player.lastY = player.y
+                        player.lastX = player.x
+                        player.lastY = player.y
 
-                    distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
-                    player.dist += int(distance)
+                        distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
+                        player.dist += int(distance)
 
-                    elapsed_time = current_timestamp  - match_start_time
-                    player.speed = int(distance / elapsed_time) if elapsed_time > 0 else 0
+                        elapsed_time = current_timestamp  - match_start_time
+                        player.speed = int(distance / elapsed_time) if elapsed_time > 0 else 0
 
-                    player.time = int(elapsed_time)
+                        player.time = int(elapsed_time)
+                    
+                    except:
+                        print('Кринж в координатах')
 
                     trajectory_point = TrajectoryPoint(
                     time=player.time,
