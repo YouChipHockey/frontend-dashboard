@@ -12,6 +12,7 @@ for key in keys:
     # Определение типа данных
     key_type = r.type(key)
     
+    print(key_type)
     if key_type == b'string':
         print(f'Key: {key}, Value: {r.get(key)}')
     elif key_type == b'list':

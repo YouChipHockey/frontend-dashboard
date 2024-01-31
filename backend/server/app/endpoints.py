@@ -128,13 +128,26 @@ def process_redis_data():
             current_timestamp = time.time()
 
             for key in keys:
-                data = json.loads(redis_client.get(key))
-                player_id = data['id']
+                key_type = redis_client.type(key)
+                if key_type == b'hash':
+                    raw_hash = redis_client.hgetall(key)
+
+                    # Преобразуйте хеш в словарь Python
+                    data = {}
+                    for k, v in raw_hash.items():
+                        data[k.decode('utf-8')] = v.decode('utf-8')
+
+                    print(data)
+                elif key_type == b'string':
+                    data = json.loads(redis_client.get(key))
+                    print(data)
+
+                player_id = int(data['id'])
                 player = next((p for p in players_data if p.id == player_id), None)
 
                 if player:
-                    x_60x30 = float(data['x']) if not pd.isna(data['x']) else 0
-                    y_60x30 = float(data['y']) if not pd.isna(data['y']) else 0
+                    x_60x30 = float(data['x']) if data['x'] != 'NaN' and data['x'] != '-Inf' else 0
+                    y_60x30 = float(data['y']) if data['y'] != 'NaN' and data['y'] != '-Inf' else 0
 
                     print(x_60x30, y_60x30)
 
