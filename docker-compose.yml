@@ -4,10 +4,7 @@ services:
     build: ./backend
     ports:
       - "5000:5000"
-    environment:
-      - FLASK_ENV=development
-      - SQLALCHEMY_DATABASE_URI=your_database_uri
-
+      
   frontend:
     build: ./frontend
     ports:
