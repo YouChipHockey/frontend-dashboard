@@ -147,8 +147,8 @@ def process_redis_data():
 
                 if player:
                     try:
-                        x_60x30 = float(data['x']) if data['x'] != 'NaN' and data['x'] != '-Inf' else 0
-                        y_60x30 = float(data['y']) if data['y'] != 'NaN' and data['y'] != '-Inf' else 0
+                        x_60x30 = float(data['x']) if data['x'] != 'NaN' and data['x'] != '-Inf' and data['x'] != '+Inf' else 0
+                        y_60x30 = float(data['y']) if data['y'] != 'NaN' and data['y'] != '-Inf' and data['y'] != '+Inf' else 0
 
                         print(x_60x30, y_60x30)
 
