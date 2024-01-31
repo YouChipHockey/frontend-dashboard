@@ -3,3 +3,4 @@ redis
 flask_sqlalchemy
 flask_cors
 apscheduler
+pandas
