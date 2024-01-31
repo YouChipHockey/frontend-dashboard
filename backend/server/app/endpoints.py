@@ -1,13 +1,14 @@
 from flask import jsonify, request
 from app import app, db
 from app.models import Player, TrajectoryPoint
-
+import pandas as pd
 from apscheduler.schedulers.background import BackgroundScheduler
 import random
 import time
 import copy
 import base64
 import redis  # Import the Redis library
+import json
 
 from common.pereferences import DEBUG, PORT, HOST
 
@@ -57,105 +58,131 @@ def update_square_counts(player):
         # print('CHEEEEk')
         square_counts[square_y][square_x] = [copy.deepcopy({"name": f"{player.name} {player.surname}", "count": 1, "team": player.team})]
 
-def generate_new_data_redis():
+def read_csv_data(file_path):
+    df = pd.read_csv(file_path)
+    return df
+
+def process_csv_data(csv_data, timestamp_iterator):
     global match_start_time, players_data
     with app.app_context():
-        players_data = Player.query.all()  
+            current_timestamp = next(timestamp_iterator)
+            timestamp_rows = csv_data[csv_data['timestamp'] == current_timestamp]
 
-    current_time = int(time.time())  # Current time in seconds
-    print(current_time - match_start_time)
-    print(players_data)
+            for _, row in timestamp_rows.iterrows():
+                player_id = row['id']
+                player = next((p for p in players_data if p.id == player_id), None)
 
-    with app.app_context():
-        for player in players_data:
-            if match_running:
-                player.x += random.uniform(-50, 50)
-                player.y += random.uniform(-50, 50)
+                if player:
+                    x_60x30 = float(row['x']) if not pd.isna(row['x']) else 0
+                    y_60x30 = float(row['y']) if not pd.isna(row['y']) else 0
 
-                player.x = max(0, min(player.x, field_width))
-                player.y = max(0, min(player.y, field_height))
+                    print(x_60x30, y_60x30)
 
-                # Prepare player data for Redis
-                redis_key = str(current_time)
-                player_data_redis = {
-                    "id": player.id,
-                    "x": player.x,
-                    "y": player.y,
-                    "timestamp": current_time
-                }
+                    # Конвертация координат в формат 1280x720
+                    x_1280x720 = (y_60x30 / 60) * 1280
+                    y_1280x720 = (x_60x30 / 30) * 720
+                    
+                    player.x = 1280 - x_1280x720
+                    player.y = 720 - y_1280x720
 
-                # Store player data in Redis
-                redis_client.hmset(redis_key, player_data_redis)
+                    player.lastX = player.x
+                    player.lastY = player.y
+
+                    distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
+                    player.dist += int(distance)
+
+                    elapsed_time = current_timestamp  - match_start_time
+                    player.speed = int(distance / elapsed_time) if elapsed_time > 0 else 0
+
+                    player.time = int(elapsed_time)
+
+                    trajectory_point = TrajectoryPoint(
+                    time=player.time,
+                    x=player.x,
+                    y=player.y,
+                    player_id=player.id
+                    )
+                    db.session.add(trajectory_point)
+
+                existing_player = Player.query.get(player.id)
+                if existing_player:
+                    # Применяем изменения
+                    existing_player.lastX = player.lastX
+                    existing_player.lastY = player.lastY
+                    existing_player.x = player.x
+                    existing_player.y = player.y
+                    existing_player.dist = player.dist
+                    existing_player.speed = player.speed
+                    existing_player.time = player.time
+
+            try:
+                db.session.commit()
+            except:
+                print(f"Error: Retrying...")
+                db.session.rollback()
 
 def process_redis_data():
     global match_start_time, players_data
-
     with app.app_context():
-        # Get all keys in Redis matching the pattern '*'
-        redis_keys = redis_client.keys('*')
-        print("1. ", time.time())
-        print("2. ",  max([round(float(k.decode())) for k in redis_keys]))
+            keys = redis_client.keys("*")
+            current_timestamp = time.time()
 
-        redis_key = max([round(float(k.decode())) for k in redis_keys])
-        # for redis_key in redis_keys:
-        player_data_redis = redis_client.hgetall(str(redis_key))
-        print(player_data_redis)
+            for key in keys:
+                data = json.loads(redis_client.get(key))
+                player_id = data['id']
+                player = next((p for p in players_data if p.id == player_id), None)
 
-            # Check if player data exists in Redis
-        if player_data_redis:
-                timestamp = int(redis_key)
+                if player:
+                    x_60x30 = float(data['x']) if not pd.isna(data['x']) else 0
+                    y_60x30 = float(data['y']) if not pd.isna(data['y']) else 0
 
-                # Only update if the timestamp is after the match start time
-                if timestamp > match_start_time:
-                    player_id = int(player_data_redis.get("id", 0))
-                    player = next((p for p in players_data if p.id == player_id), None)
+                    print(x_60x30, y_60x30)
 
-                    if player:
-                        player.x = float(player_data_redis.get("x", 0))
-                        player.y = float(player_data_redis.get("y", 0))
+                    # Конвертация координат в формат 1280x720
+                    x_1280x720 = (y_60x30 / 60) * 1280
+                    y_1280x720 = (x_60x30 / 30) * 720
+                    
+                    player.x = 1280 - x_1280x720
+                    player.y = 720 - y_1280x720
 
-                        player.lastX = player.x
-                        player.lastY = player.y
+                    player.lastX = player.x
+                    player.lastY = player.y
 
-                        distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
-                        player.dist += int(distance)
+                    distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
+                    player.dist += int(distance)
 
-                        elapsed_time = timestamp - match_start_time
-                        player.speed = int(distance / elapsed_time) if elapsed_time > 0 else 0
+                    elapsed_time = current_timestamp  - match_start_time
+                    player.speed = int(distance / elapsed_time) if elapsed_time > 0 else 0
 
-                        player.time = int(elapsed_time)
+                    player.time = int(elapsed_time)
 
-                        update_square_counts(player)
-
-                        trajectory_point = TrajectoryPoint(
-                            time=player.time,
-                            x=player.x,
-                            y=player.y,
-                            player_id=player.id
-                        )
-                        db.session.add(trajectory_point)
-
-                        # Delete the processed data from Redis
-                        redis_client.zrem(PLAYER_DATA_KEY_FORMAT.format('*'), redis_key)
-
-                        existing_player = Player.query.get(player.id)
-                        if existing_player:
-                            # Применяем изменения
-                            existing_player.lastX = player.lastX
-                            existing_player.lastY = player.lastY
-                            existing_player.x = player.x
-                            existing_player.y = player.y
-                            existing_player.dist = player.dist
-                            existing_player.speed = player.speed
-                            existing_player.time = player.time
+                    trajectory_point = TrajectoryPoint(
+                    time=player.time,
+                    x=player.x,
+                    y=player.y,
+                    player_id=player.id
+                    )
+                    db.session.add(trajectory_point)
 
 
-        try:
-            db.session.commit()
-        except:
-            print(f"Error:. Retrying...")
-            db.session.rollback()
-            process_redis_data()
+                redis_client.delete(key)
+
+                existing_player = Player.query.get(player.id)
+                if existing_player:
+                    # Применяем изменения
+                    existing_player.lastX = player.lastX
+                    existing_player.lastY = player.lastY
+                    existing_player.x = player.x
+                    existing_player.y = player.y
+                    existing_player.dist = player.dist
+                    existing_player.speed = player.speed
+                    existing_player.time = player.time
+
+            try:
+                db.session.commit()
+            except:
+                print(f"Error: Retrying...")
+                db.session.rollback()
 
 
 
@@ -247,24 +274,33 @@ def get_player_trajectories():
 
 @app.route('/api/start_match', methods=['POST'])
 def start_match():
-    global match_running, match_start_time, square_counts
-    for player in players_data:
-        player.x = 600
-        player.y = 300
-    square_counts = [[[{"name": f"", "count": 0}]] * num_squares_x for _ in range(num_squares_y)]
-    
-    if not match_running:
-        match_running = True
-        match_start_time = time.time()
-        
-        # Clear existing player data in Redis
+    global match_running, match_start_time, square_counts, csv_data, current_csv_index
+    with app.app_context():
+        # Очищаем данные о текущих игроках
         for player in players_data:
-            redis_key = PLAYER_DATA_KEY_FORMAT.format(player.id)
-            redis_client.delete(redis_key)
-        
-        # scheduler.add_job(generate_new_data_redis, 'interval', seconds=1)
-        scheduler.add_job(process_redis_data, 'interval', seconds=1)
-        
+            player.x = 600
+            player.y = 300
+        square_counts = [[[{"name": f"", "count": 0}]] * num_squares_x for _ in range(num_squares_y)]
+
+        if not match_running:
+            match_running = True
+            match_start_time = time.time()
+
+            # # Читаем CSV файл
+            # csv_data = read_csv_data('fake.csv')  # Укажите путь к вашему CSV файлу
+            # unique_timestamps = csv_data['timestamp'].unique()
+
+
+            # timestamp_iterator = iter(unique_timestamps)
+
+            # # Обновляем данные из CSV файла
+            # process_csv_data(csv_data, timestamp_iterator)
+
+            
+
+            # Перезапускаем job process_csv_data с новым вызовом
+            scheduler.add_job(process_redis_data, 'interval', seconds=1)
+
     return jsonify({"message": "Match started"})
 
 @app.route('/api/end_match', methods=['POST'])

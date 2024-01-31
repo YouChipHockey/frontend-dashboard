@@ -23,6 +23,6 @@ for key in keys:
     elif key_type == b'hash':
         print(f'Key: {key}, Values: {r.hgetall(key)}')
     
-    # r.delete(key)
+    r.delete(key)
 
 r.delete('foo')
