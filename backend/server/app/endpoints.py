@@ -180,6 +180,7 @@ def process_redis_data():
                         if len(global_traj[player.id]) < 5:
                             print('Траектория добавлена в сток')
                             global_traj[player.id].append({'x': player.x, 'y': player.y, 'order': len(global_traj[player.id])})
+                            redis_client.delete(key)
                         else:
                             print('Предел траекторий достигнут')
                         print(global_traj[player.id])
@@ -201,9 +202,6 @@ def process_redis_data():
                     player_id=player.id
                     )
                     db.session.add(trajectory_point)
-
-
-                redis_client.delete(key)
 
                 existing_player = Player.query.get(player.id)
                 if existing_player:
@@ -405,7 +403,7 @@ def start_match():
             
 
             # Перезапускаем job process_csv_data с новым вызовом
-            scheduler.add_job(process_redis_data, 'interval', seconds=5 )
+            scheduler.add_job(process_redis_data, 'interval', seconds=3 )
 
     return jsonify({"message": "Match started"})
 

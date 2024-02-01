@@ -69,6 +69,16 @@ const HockeyMap = () => {
           // Запуск анимации только если есть новые данные и компонент не размонтирован
           if (newPlayersData.length > 0 && !isUnmounted) {
             animatePlayers(ctx, newPlayersData);
+            newPlayersData.forEach(player => {
+              const previousPosition = playersDataRef.current.find(
+                prevPlayer => prevPlayer.id === player.id
+              );
+    
+              player.traj = [
+                { x: previousPosition?.x || player.x, y: previousPosition?.y || player.y },
+                ...player.traj
+              ];
+            });
           } else {
             // Если данных нет или компонент размонтирован, просто повторно запросить их через секунду
             // setAnimationFrame(setTimeout(fetchDataAndAnimate, 25));
@@ -83,25 +93,12 @@ const HockeyMap = () => {
 
     const animatePlayers = (ctx, newPlayersData) => {
       const startPlayersData = playersDataRef.current;
-
-      // const trajWithPreviousPositions = [...player.traj];
-      //       if (previousPositions[player.id]) {
-      //         trajWithPreviousPositions.unshift({
-      //             x: previousPositions[player.id].x,
-      //             y: previousPositions[player.id].y,
-      //         });
-      //       }
-
       const trajectories = newPlayersData.map(player => player.traj);
 
       // Находим максимальную длину траектории среди всех игроков
       const maxTrajectoryLength = Math.max(...trajectories.map(trajectory => getBezierPoints(trajectory, trajectory.length * 60).length));
       
       console.log(maxTrajectoryLength)
-      // // Генерируем точки Безье для каждой траектории
-      // const bezierPoints = trajectories.map(trajectory =>
-      //   getBezierPoints(trajectory, maxTrajectoryLength)
-      // );
 
       const animateStep = (step) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -221,9 +218,6 @@ const HockeyMap = () => {
     
         ctx.globalAlpha = 1;
 
-        // img.onload = () => {
-        // ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        // }    
 
         if (newPlayersData && newPlayersData.length > 0) {
           newPlayersData.forEach((player, index) => {
@@ -237,16 +231,6 @@ const HockeyMap = () => {
               JSON.stringify(player.traj) !== JSON.stringify(startPlayersData[index]?.traj)
             );
 
-
-            // const startX = startPlayersData[index]?.x || player.x;
-            // const startY = startPlayersData[index]?.y || player.y;
-
-            // const endX = player.x;
-            // const endY = player.y;
-
-            // const easing = bezierEasing(0.4, 0.0, 0.2, 1);
-            // const t = easing(step / 60);
-
             let x = point.x;
             let y = point.y;
 
@@ -259,9 +243,7 @@ const HockeyMap = () => {
               x = player.x;
               y = player.y;
             }
-            const easing = bezierEasing(0.4, 0.0, 0.2, 1);
-            const t = easing(index_check / bezierPoints.length);
-
+            
             ctx.beginPath();
             ctx.arc(x, y, 24, 0, 2 * Math.PI);
 
