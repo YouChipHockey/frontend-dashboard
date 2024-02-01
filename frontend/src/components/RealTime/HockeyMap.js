@@ -84,13 +84,13 @@ const HockeyMap = () => {
     const animatePlayers = (ctx, newPlayersData) => {
       const startPlayersData = playersDataRef.current;
 
-      const trajWithPreviousPositions = [...player.traj];
-            if (previousPositions[player.id]) {
-              trajWithPreviousPositions.unshift({
-                  x: previousPositions[player.id].x,
-                  y: previousPositions[player.id].y,
-              });
-            }
+      // const trajWithPreviousPositions = [...player.traj];
+      //       if (previousPositions[player.id]) {
+      //         trajWithPreviousPositions.unshift({
+      //             x: previousPositions[player.id].x,
+      //             y: previousPositions[player.id].y,
+      //         });
+      //       }
 
       const trajectories = newPlayersData.map(player => player.traj);
 
