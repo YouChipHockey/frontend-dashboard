@@ -179,13 +179,19 @@ def process_redis_data():
                         player.x = 1280 - x_1280x720
                         player.y = 720 - y_1280x720
 
+                        distance = ((abs((player.x / 1280) - (player.lastX / 1280)) * 60) ** 2 + (abs((player.y / 720) - (player.lastY / 720)) * 30) ** 2) ** 0.5
+                        print(f"Оценка дистанции: {distance}")
+                        if distance > 18:
+                            player.x = player.lastX
+                            player.y = player.lastY
+    
+
                         # if len(global_traj[player.id]) < 5:
                         print('Траектория добавлена в сток')
                         global_traj[player.id].append({'x': player.x, 'y': player.y, 'order': len(global_traj[player.id])})
                         # else:
                         #     print('Предел траекторий достигнут')
                         print(global_traj[player.id])
-                        distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
                         player.dist += int(distance)
 
                         elapsed_time = current_timestamp  - match_start_time
