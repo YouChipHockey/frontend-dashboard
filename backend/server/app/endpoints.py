@@ -179,12 +179,11 @@ def process_redis_data():
                         player.x = 1280 - x_1280x720
                         player.y = 720 - y_1280x720
 
-                        if len(global_traj[player.id]) < 5:
-                            print('Траектория добавлена в сток')
-                            global_traj[player.id].append({'x': player.x, 'y': player.y, 'order': len(global_traj[player.id])})
-                            redis_client.delete(key)
-                        else:
-                            print('Предел траекторий достигнут')
+                        # if len(global_traj[player.id]) < 5:
+                        print('Траектория добавлена в сток')
+                        global_traj[player.id].append({'x': player.x, 'y': player.y, 'order': len(global_traj[player.id])})
+                        # else:
+                        #     print('Предел траекторий достигнут')
                         print(global_traj[player.id])
                         distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
                         player.dist += int(distance)
@@ -204,6 +203,8 @@ def process_redis_data():
                     player_id=player.id
                     )
                     db.session.add(trajectory_point)
+                
+                redis_client.delete(key)
 
                 existing_player = Player.query.get(player.id)
                 if existing_player:
