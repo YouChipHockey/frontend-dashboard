@@ -129,6 +129,8 @@ def process_csv_data(csv_data, timestamp_iterator):
 def process_redis_data():
     global match_start_time, players_data, global_traj
     with app.app_context():
+            for player in players_data:
+                global_traj[player.id] = []
             keys = redis_client.keys("*")
             current_timestamp = time.time()
             print(keys)
