@@ -18,28 +18,14 @@ r = redis.StrictRedis(host=redis_host, port=redis_port, db=redis_db, password=re
 #     print(my_dict)
 #     time.sleep(random.randint(1,3))
 
-# while True:
-my_dict = {'id': 10, 'x': random.randint(27, 30), 'y': 30, 'timestamp': time.time()}
-r.set(str(len(r.keys()) + 1), json.dumps(my_dict))
-    # time.sleep(1)
-print(my_dict)
 
-my_dict = {'id': 10, 'x': 15, 'y': 30, 'timestamp': time.time()}
+my_dict = {'id': 10, 'x': 0, 'y': 25, 'timestamp': time.time()}
 r.set(str(len(r.keys()) + 1), json.dumps(my_dict))
 
-
-my_dict = {'id': 10, 'x': random.randint(0, 3), 'y': 28, 'timestamp': time.time()}
-r.set(str(len(r.keys()) + 1), json.dumps(my_dict))
-time.sleep(3)
-print(my_dict)
-
-my_dict = {'id': 10, 'x': 15, 'y': 30, 'timestamp': time.time()}
+my_dict = {'id': 10, 'x': 30, 'y': 25, 'timestamp': time.time()}
 r.set(str(len(r.keys()) + 1), json.dumps(my_dict))
 
-my_dict = {'id': 10, 'x': random.randint(27, 30), 'y': 30, 'timestamp': time.time()}
+my_dict = {'id': 10, 'x': 0, 'y': 25, 'timestamp': time.time()}
 r.set(str(len(r.keys()) + 1), json.dumps(my_dict))
-# time.sleep(1)
-print(my_dict)
 
-time.sleep(3)
 print(r.keys())

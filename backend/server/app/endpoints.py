@@ -186,11 +186,11 @@ def process_redis_data():
                             player.y = player.lastY
     
 
-                        # if len(global_traj[player.id]) < 5:
-                        print('Траектория добавлена в сток')
-                        global_traj[player.id].append({'x': player.x, 'y': player.y, 'order': len(global_traj[player.id])})
-                        # else:
-                        #     print('Предел траекторий достигнут')
+                        if len(global_traj[player.id]) < 3:
+                            print('Траектория добавлена в сток')
+                            global_traj[player.id].append({'x': player.x, 'y': player.y, 'order': len(global_traj[player.id])})
+                        else:
+                            print('Предел траекторий достигнут')
                         print(global_traj[player.id])
                         player.dist += int(distance)
 
