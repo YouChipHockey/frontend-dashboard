@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
+import bezierEasing from 'bezier-easing';
+
 
 const PlayerInfo = ({player}) => (
   <div className='PlayerInfo'>
@@ -42,7 +44,7 @@ const PlayerInfo = ({player}) => (
 const HockeyMap = () => {
   const canvasRef = useRef(null);
   const playersDataRef = useRef([]);
-  const serverUrl = 'http://91.108.241.205:5000/api/players';
+  const serverUrl = 'http://127.0.0.1:5000/api/players';
   const [animationFrame, setAnimationFrame] = useState(null);
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -81,6 +83,17 @@ const HockeyMap = () => {
 
     const animatePlayers = (ctx, newPlayersData) => {
       const startPlayersData = playersDataRef.current;
+
+      const trajectories = newPlayersData.map(player => player.traj);
+
+      // Находим максимальную длину траектории среди всех игроков
+      const maxTrajectoryLength = Math.max(...trajectories.map(trajectory => getBezierPoints(trajectory, trajectory.length * 60).length));
+      
+      console.log(maxTrajectoryLength)
+      // // Генерируем точки Безье для каждой траектории
+      // const bezierPoints = trajectories.map(trajectory =>
+      //   getBezierPoints(trajectory, maxTrajectoryLength)
+      // );
 
       const animateStep = (step) => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -206,16 +219,39 @@ const HockeyMap = () => {
 
         if (newPlayersData && newPlayersData.length > 0) {
           newPlayersData.forEach((player, index) => {
-            const startX = startPlayersData[index]?.x || player.x;
-            const startY = startPlayersData[index]?.y || player.y;
+            const bezierPoints = getBezierPoints(player.traj, player.traj.length * 60);
 
-            const endX = player.x;
-            const endY = player.y;
+            const index_check = Math.min(Math.floor(step), bezierPoints.length - 1);
+            const point = bezierPoints[index_check];
 
-            const t = step / 60;
+            const isTrajectoryChanged = (player.traj.length !== startPlayersData[index]?.traj?.length ||
+              JSON.stringify(player.traj) !== JSON.stringify(startPlayersData[index]?.traj)
+            );
 
-            const x = startX + (endX - startX) * t;
-            const y = startY + (endY - startY) * t;
+
+            // const startX = startPlayersData[index]?.x || player.x;
+            // const startY = startPlayersData[index]?.y || player.y;
+
+            // const endX = player.x;
+            // const endY = player.y;
+
+            // const easing = bezierEasing(0.4, 0.0, 0.2, 1);
+            // const t = easing(step / 60);
+
+            let x = point.x;
+            let y = point.y;
+
+            // Применение easing
+            if (isTrajectoryChanged) {
+              x = point.x;
+              y = point.y;
+            }
+            else{
+              x = player.x;
+              y = player.y;
+            }
+            const easing = bezierEasing(0.4, 0.0, 0.2, 1);
+            const t = easing(index_check / bezierPoints.length);
 
             ctx.beginPath();
             ctx.arc(x, y, 24, 0, 2 * Math.PI);
@@ -259,13 +295,14 @@ const HockeyMap = () => {
             ctx.textBaseline = 'middle';
             ctx.fillText(`${player.num}`, x, y);
 
+            
             // Если был клик на игрока, обработка дополнительных действий
             if (isClicked) {
               setSelectedPlayer(player);
             }
           });
 
-          if (step < 60) {
+          if (step < maxTrajectoryLength - 1) {
             setAnimationFrame(requestAnimationFrame(() => animateStep(step + 1)));
           } else {
             // После завершения текущей анимации, сохраняем новые координаты
@@ -274,7 +311,7 @@ const HockeyMap = () => {
             // Запрашиваем новые координаты и начинаем новую анимацию
             setAnimationFrame(setTimeout(() => {
               fetchDataAndAnimate();
-            }, 10));
+            }, 300));
           }
         }
       };
@@ -282,6 +319,38 @@ const HockeyMap = () => {
       // Начинаем анимацию с предыдущих координат
       animateStep(0);
     };
+
+    // Функция для генерации точек на кривой Безье
+function getBezierPoints(points, resolution) {
+  const bezierPoints = [];
+  for (let t = 0; t <= 1; t += 1 / resolution) {
+    const x = bezierInterpolation(t, points.map(point => point.x));
+    const y = bezierInterpolation(t, points.map(point => point.y));
+    bezierPoints.push({ x, y });
+  }
+  return bezierPoints;
+}
+
+// Функция для интерполяции по точкам с использованием кривой Безье
+function bezierInterpolation(t, values) {
+  const n = values.length - 1;
+  let result = 0;
+  for (let i = 0; i <= n; i++) {
+    result += binomialCoefficient(n, i) * (1 - t) ** (n - i) * t ** i * values[i];
+  }
+  return result;
+}
+
+// Функция для вычисления биномиального коэффициента
+function binomialCoefficient(n, k) {
+  return factorial(n) / (factorial(k) * factorial(n - k));
+}
+
+// Функция для вычисления факториала
+function factorial(num) {
+  if (num === 0 || num === 1) return 1;
+  return num * factorial(num - 1);
+}
 
     // Вызываем fetchDataAndAnimate при монтировании компонента
     fetchDataAndAnimate();

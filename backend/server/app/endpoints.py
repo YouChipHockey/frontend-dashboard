@@ -34,6 +34,8 @@ redis_client = redis.Redis(host='91.108.241.205', port=6379)
 # Define the Redis key format for player data
 PLAYER_DATA_KEY_FORMAT = "player_data:{}"
 
+global_traj = {}
+
 def update_square_counts(player):
     square_x = int(player.x // square_width)
     square_y = int((field_height - player.y) // square_height)
@@ -70,6 +72,9 @@ def process_csv_data(csv_data, timestamp_iterator):
 
             for _, row in timestamp_rows.iterrows():
                 player_id = row['id']
+                if not global_traj[player.id]:
+                    global_traj[player.id] = []
+
                 player = next((p for p in players_data if p.id == player_id), None)
 
                 if player:
@@ -122,10 +127,12 @@ def process_csv_data(csv_data, timestamp_iterator):
                 db.session.rollback()
 
 def process_redis_data():
-    global match_start_time, players_data
+    global match_start_time, players_data, global_traj
     with app.app_context():
             keys = redis_client.keys("*")
             current_timestamp = time.time()
+            print(keys)
+            player_id = None
 
             for key in keys:
                 key_type = redis_client.type(key)
@@ -136,32 +143,42 @@ def process_redis_data():
                     data = {}
                     for k, v in raw_hash.items():
                         data[k.decode('utf-8')] = v.decode('utf-8')
+                    player_id = int(data['id'])
 
                     print(data)
                 elif key_type == b'string':
                     data = json.loads(redis_client.get(key))
                     print(data)
+                    player_id = int(data['id'])
 
-                player_id = int(data['id'])
+                # player_id = int(data['id'])
                 player = next((p for p in players_data if p.id == player_id), None)
 
+
                 if player:
+                    if not global_traj[player.id]:
+                        global_traj[player.id] = []
                     try:
-                        x_60x30 = float(data['x']) if data['x'] != 'NaN' and data['x'] != '-Inf' and data['x'] != '+Inf' else 0
-                        y_60x30 = float(data['y']) if data['y'] != 'NaN' and data['y'] != '-Inf' and data['y'] != '+Inf' else 0
+                        x_60x30 = float(data['x']) if data['x'] != 'NaN' and data['x'] != '-Inf' and data['x'] != '+Inf' else (player.x / 1280) * 60
+                        y_60x30 = float(data['y']) if data['y'] != 'NaN' and data['y'] != '-Inf' and data['y'] != '+Inf' else (player.y / 720) * 30
 
                         print(x_60x30, y_60x30)
 
                     # Конвертация координат в формат 1280x720
                         x_1280x720 = (y_60x30 / 60) * 1280
                         y_1280x720 = (x_60x30 / 30) * 720
-                    
-                        player.x = 1280 - x_1280x720
-                        player.y = 720 - y_1280x720
 
                         player.lastX = player.x
                         player.lastY = player.y
 
+                        # player.x = max(x_1280x720, 0)
+                        # player.y = min(y_1280x720, 0)
+                    
+                        player.x = 1280 - x_1280x720
+                        player.y = 720 - y_1280x720
+
+                        global_traj[player.id].append({'x': player.x, 'y': player.y, 'order': len(global_traj[player.id])})
+                        print(global_traj[player.id])
                         distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
                         player.dist += int(distance)
 
@@ -200,6 +217,72 @@ def process_redis_data():
             except:
                 print(f"Error: Retrying...")
                 db.session.rollback()
+
+def generate_new_coordinates(current_x, current_y):
+    points_count = random.randint(1, 5)
+
+    traj_points = []
+
+    traj_points.append({'x':current_x ,'y': current_y,'order': 0})
+
+    for point in range(1, points_count + 1):
+        delta_x = random.uniform(-16.8, 16.8)
+        delta_y = random.uniform(-16.8, 16.8)
+
+        x_1280x720 = (delta_x / 60) * 1280
+        y_1280x720 = (delta_y / 30) * 720
+
+        new_x = max(current_x + x_1280x720, 0)
+        new_y = max(current_y + y_1280x720, 0)
+
+        new_x = min(new_x, 1280)
+        new_y = min(new_y, 720)
+
+        traj_points.append({'x':new_x ,'y': new_y,'order': point})
+
+
+    return traj_points
+
+def generate_points_for_frontend():
+    global match_start_time, players_data, global_traj
+    with app.app_context():
+        players_data = Player.query.all()
+        for player in players_data:
+                        traj_points = generate_new_coordinates(player.x, player.y)
+
+                        global_traj[player.id] = traj_points
+
+                        player.lastX = player.x
+                        player.lastY = player.y
+                    
+                        player.x = traj_points[-1]['x']
+                        player.y = traj_points[-1]['y']
+
+                        distance = ((player.x - player.lastX) ** 2 + (player.y - player.lastY) ** 2) ** 0.5
+                        player.dist += int(distance)
+
+                        elapsed_time = int(time.time()) - match_start_time
+                        player.speed = int(distance / elapsed_time) if elapsed_time > 0 else 0
+
+                        player.time = int(elapsed_time)
+
+                        existing_player = Player.query.get(player.id)
+                        if existing_player:
+                    # Применяем изменения
+                            existing_player.lastX = player.lastX
+                            existing_player.lastY = player.lastY
+                            existing_player.x = player.x
+                            existing_player.y = player.y
+                            existing_player.dist = player.dist
+                            existing_player.speed = player.speed
+                            existing_player.time = player.time
+                        
+                        try:
+                            db.session.commit()
+                        except:
+                            print(f"Error: Retrying...")
+                            db.session.rollback()
+
 
 
 
@@ -242,8 +325,9 @@ def filter_trajectories_by_time(start_time, end_time):
 @app.route('/api/players', methods=['GET', 'OPTIONS'])
 def get_players_data():
     players = Player.query.all()
-    players_data = [
-    {
+    players_data = []
+    for player in players:
+        players_data.append({
             'id': player.id,
             'team': player.team,
             'num': player.num,
@@ -256,10 +340,11 @@ def get_players_data():
             'time': player.time,
             'lastX': player.lastX,
             'lastY': player.lastY,
-            'image': base64.b64encode(player.avatar).decode('utf-8') if player.avatar else "NO IMAGE"
-    }
-    for player in players
-    ]
+            'image': base64.b64encode(player.avatar).decode('utf-8') if player.avatar else "NO IMAGE",
+            'traj': global_traj[player.id],
+        })
+        # global_traj[player.id] = []
+
     # print(players_data)
     return jsonify(players_data)
 
@@ -316,7 +401,7 @@ def start_match():
             
 
             # Перезапускаем job process_csv_data с новым вызовом
-            scheduler.add_job(process_redis_data, 'interval', seconds=1)
+            scheduler.add_job(process_redis_data, 'interval', seconds=5 )
 
     return jsonify({"message": "Match started"})
 
@@ -342,6 +427,8 @@ def main():
     with app.app_context():
         db.create_all()
         players_data = Player.query.all()
+        for player in players_data:
+            global_traj[player.id] = []
 
     try:
         app.run(host=HOST, port=PORT, debug=DEBUG)
