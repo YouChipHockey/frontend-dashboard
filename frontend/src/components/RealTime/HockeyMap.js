@@ -44,7 +44,7 @@ const PlayerInfo = ({player}) => (
 const HockeyMap = () => {
   const canvasRef = useRef(null);
   const playersDataRef = useRef([]);
-  const serverUrl = 'http://127.0.0.1:5000/api/players';
+  const serverUrl = 'http://91.108.241.205:5000/api/players';
   const [animationFrame, setAnimationFrame] = useState(null);
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -83,6 +83,14 @@ const HockeyMap = () => {
 
     const animatePlayers = (ctx, newPlayersData) => {
       const startPlayersData = playersDataRef.current;
+
+      const trajWithPreviousPositions = [...player.traj];
+            if (previousPositions[player.id]) {
+              trajWithPreviousPositions.unshift({
+                  x: previousPositions[player.id].x,
+                  y: previousPositions[player.id].y,
+              });
+            }
 
       const trajectories = newPlayersData.map(player => player.traj);
 
@@ -219,6 +227,7 @@ const HockeyMap = () => {
 
         if (newPlayersData && newPlayersData.length > 0) {
           newPlayersData.forEach((player, index) => {
+            
             const bezierPoints = getBezierPoints(player.traj, player.traj.length * 60);
 
             const index_check = Math.min(Math.floor(step), bezierPoints.length - 1);
