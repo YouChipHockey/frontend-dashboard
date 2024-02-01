@@ -16,6 +16,6 @@ while True:
     my_dict = {'id': random.randint(1,10), 'x': random.randint(5, 30), 'y':random.randint(5, 60), 'timestamp': time.time()}
     r.set(str(len(r.keys()) + 1), json.dumps(my_dict))
     print(my_dict)
-    # time.sleep(random.randint(0,1))
+    time.sleep(random.randint(1,3))
 
 print(r.keys())
