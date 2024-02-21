@@ -9,7 +9,7 @@ const PlayerTrajectories = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/trajectories');
+        const response = await fetch('http://147.45.68.109:5000/api/trajectories');
         if (response.ok) {
           const trajectoriesData = await response.json();
           setPlayerTrajectories(trajectoriesData);
@@ -39,7 +39,7 @@ const PlayerTrajectories = () => {
       ctx.beginPath();
       ctx.arc(x, y, 24, 0, 2 * Math.PI);
 
-      const playerColor = playerData.team === 0 ? '#FF0000' : '#2E318F';
+      const playerColor = playerData.team === 1 ? '#FF0000' : playerData.team === 2 ? '#2E318F': '#000000';
       const alpha = selectedPlayerId === playerId ? 1 : 0.5;
 
       ctx.globalAlpha = alpha;
