@@ -47,7 +47,7 @@ const PlayerInfo = ({ match }) => {
   useEffect(() => {
     const fetchPlayerData = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/player/${playerId}`);
+        const response = await fetch(`http://147.45.68.109:5000/api/player/${playerId}`);
         if (response.ok) {
             const newPlayersData = await response.json();
             console.log(newPlayersData);
@@ -105,13 +105,13 @@ const PlayerInfo = ({ match }) => {
           <h3># {playerData.num}</h3>
         </div>
         <div className='PlayerBodyDet'>
-          <h3>Хват: левый</h3>
-          <h3>Позиция: НАП</h3>
+          <h3>Хват: {playerData.grip}</h3>
+          <h3>Позиция: {playerData.position}</h3>
           <h3>Команда: {playerData.team}</h3>
-          <h3>Рост : 185 см.</h3>
-          <h3>Дата рождения:04.10.2004</h3>
-          <h3>Вес:78 кг.</h3>
-          <h3>Возраст:19</h3>
+          <h3>Рост : </h3>
+          <h3>Дата рождения:</h3>
+          <h3>Вес: </h3>
+          <h3>Возраст: </h3>
         </div>
       </div>
     </div>
@@ -124,34 +124,34 @@ const PlayerInfo = ({ match }) => {
         <div className='PlayerMainInfo'>
         <div className='PlayerStatDet'>
           <h3>Cр. скорость:
-19.9 км/ч</h3>
+          {playerData.speed} км/ч</h3>
           <h3>Макс. скорость:
-31.2 км/ч</h3>
+          {playerData.speed} км/ч</h3>
           <h3>Ускорений:
-10</h3>
+-</h3>
           <h3>Торможений:
-12</h3>
+-</h3>
           <h3>Время для макс. скор.:
-2,3 с.</h3>
+- с.</h3>
           <h3>Виражей:
 7</h3>
           <h3>Время выпол.Виража:
-7</h3>
+-</h3>
 
 <h3>Время выпол.Виража:
-7</h3>
+-</h3>
 
 <h3>Время выпол.Виража:
-7</h3>
+-</h3>
 
 <h3>Расстояние:
-2450 м.</h3>
+{playerData.dist} м.</h3>
 
 <h3>Время:
-17:56 м.</h3>
+{playerData.time} м.</h3>
 
 <h3>Макс. угол наклона:
-24*</h3>
+-</h3>
 
 
         </div>

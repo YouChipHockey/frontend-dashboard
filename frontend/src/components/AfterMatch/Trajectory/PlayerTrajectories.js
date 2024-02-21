@@ -9,7 +9,7 @@ const PlayerTrajectories = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://147.45.68.109:5000/api/trajectories');
+        const response = await fetch('http://localhost:5000/api/trajectories');
         if (response.ok) {
           const trajectoriesData = await response.json();
           setPlayerTrajectories(trajectoriesData);
@@ -256,7 +256,7 @@ const PlayerTrajectories = () => {
   const onHandleSliderChange = async (newValues) => {
     try {
 
-      const response = await fetch('http://127.0.0.1:5000/api/filtered_trajectories', {
+      const response = await fetch('http://147.45.68.109:5000/api/filtered_trajectories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

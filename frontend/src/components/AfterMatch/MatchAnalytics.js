@@ -57,7 +57,7 @@ const HockeyMatchAnalytics = ({ matchId }) => {
 
   const chartOptionsTotalDistanceByPeriod = {
     xaxis: {
-      categories: ['0s', '30s', '1m', '1m 30s', '2m', '2m 30s', '3m', '3m 30s', '4m'],
+      categories: ['1m', '5m', '10m' ,'15m', '20m', '25m', '30m'],
     },
     chart: {
       toolbar: {
@@ -72,7 +72,7 @@ const HockeyMatchAnalytics = ({ matchId }) => {
 
   const chartOptionsAverageDistanceByPeriod = {
     xaxis: {
-      categories: ['0s', '30s', '1m', '1m 30s', '2m', '2m 30s', '3m', '3m 30s', '4m'],
+      categories: ['1m', '5m', '10m' ,'15m', '20m', '25m', '30m'],
     },
     chart: {
       toolbar: {
@@ -82,7 +82,7 @@ const HockeyMatchAnalytics = ({ matchId }) => {
   };
   const chartOptionsSpeed = {
     xaxis: {
-      categories: ['0s', '30s', '1m', '1m 30s', '2m', '2m 30s', '3m', '3m 30s', '4m'],
+      categories: ['1m', '5m', '10m' ,'15m', '20m', '25m', '30m'],
     },
     chart: {
       toolbar: {
@@ -97,7 +97,7 @@ const HockeyMatchAnalytics = ({ matchId }) => {
 
   const chartOptionsAcceleration = {
     xaxis: {
-      categories: ['0s', '30s', '1m', '1m 30s', '2m', '2m 30s', '3m', '3m 30s', '4m'],
+      categories: ['1m', '5m', '10m' ,'15m', '20m', '25m', '30m'],
     },
     chart: {
       toolbar: {
@@ -145,67 +145,7 @@ const HockeyMatchAnalytics = ({ matchId }) => {
   return (
     <div>
     <div className="hockey-analytics-container">
-      {analyticsData ? (
-        <div className="charts-grid">
-          {/* Вывод данных аналитики */}
-          
-          <h1>Аналитика по прошедшему матчу</h1>
-          <div>
-            <p>Match ID: {analyticsData.matchId}</p>
-            <p>Длительность матча: {analyticsData.duration}</p>
-            <p>Суммарное пройденное расстояние: {analyticsData.totalDistanceOnline}</p>
-            <p>Ускорение в режиме онлайн: {analyticsData.onlineAcceleration}</p>
-          </div>
 
-          {/* Графики */}
-          <ApexChart
-            options={chartOptionsTotalDistanceByPeriod}
-            series={[{ name: 'Пройденное расстояние', data: analyticsData.totalDistanceByPeriod }]}
-            type="area"
-            height={200}
-          />
-
-        <ApexChart
-            options={chartOptionsSpeed}
-            series={[{ name: 'Скорость', data: analyticsData.speedData }]}
-            type="line"
-            height={300}
-          />
-
-          <ApexChart
-            options={chartOptionsAcceleration}
-            series={[{ name: 'Ускорение', data: analyticsData.accelerationData }]}
-            type="line"
-            height={300}
-          />
-
-
-          <ApexChart
-            options={chartOptionsAverageDistanceByPeriod}
-            series={[{ name: 'Средний пробег', data: analyticsData.averageDistanceByPeriod }]}
-            type="bar"
-            height={300}
-          />
-
-          <ApexChart
-            options={chartOptionsAccelerationsOverTime}
-            series={[{ name: 'Количество ускорений', data: analyticsData?.accelerationsOverTime?.map(item => item.count) || [] }]}
-            type="bar"
-            height={300}
-          />
-
-          <ApexChart
-            options={chartOptionsPlayerSpeedByShift}
-            series={[{ name: 'Скорость хоккеиста', data: analyticsData.playerSpeedByShift }]}
-            type="line"
-            height={300}
-            width={500}
-
-          />
-        </div>
-      ) : (
-        <p>Loading hockey analytics data...</p>
-      )}
     </div>
     <h1>Игроки матча</h1>
     <div className='meow'>
@@ -225,8 +165,8 @@ const HockeyMatchAnalytics = ({ matchId }) => {
           <h3># {player.num}</h3>
         </div>
         <div className='PlayerBody'>
-          <h3>Хват: левый</h3>
-          <h3>Позиция: НАП</h3>
+          <h3>Хват:  {player.grip}</h3>
+          <h3>Позиция:  {player.position}</h3>
           <h3>Команда: {player.team}</h3>
         </div>
       </div>
