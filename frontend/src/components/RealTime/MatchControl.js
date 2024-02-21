@@ -8,9 +8,14 @@ const MatchControl = () => {
 
   const startMatch = async () => {
     try {
-      await fetch('http://91.108.241.205:5000/api/start_match', { method: 'POST' });
-      setMatchStartTime(new Date());
-      setMatchStatus('Match Started');
+      const response = await fetch('http://147.45.68.109:5000/api/start_match', { method: 'POST' });
+      const result = await response.json();
+      if (result.message === "Match started") {
+        setMatchStartTime(new Date());
+        setMatchStatus('Match Started');
+      } else {
+        console.log("Match already running");
+      }
     } catch (error) {
       console.error('Error starting match:', error);
     }
@@ -18,38 +23,84 @@ const MatchControl = () => {
 
   const endMatch = async () => {
     try {
-      await fetch('http://91.108.241.205:5000/api/end_match', { method: 'POST' });
-      setMatchStartTime(null);
-      setMatchStatus('Match Ended');
+      const response = await fetch('http://147.45.68.109:5000/api/end_match', { method: 'POST' });
+      const result = await response.json();
+      if (result.message === "Match ended") {
+        setMatchStartTime(null);
+        setMatchStatus('Match Ended');
+      } else {
+        console.log("Match not running");
+      }
     } catch (error) {
       console.error('Error ending match:', error);
     }
   };
 
-  useEffect(() => {
-    const fetchCurrentTime = () => {
-      if (matchStartTime) {
-        const elapsedTime = new Date() - matchStartTime;
-        const formattedTime = new Date(elapsedTime).toISOString().substr(11, 8);
-        setCurrentTime(formattedTime);
-      } else {
-        setCurrentTime('Not Started');
+  const fetchMatchTime = async () => {
+    try {
+      const response = await fetch('http://147.45.68.109:5000/api/match_time');
+      const result = await response.json();
+      if (result.match_time.toFixed(0) !== 0) {
+          setMatchStatus('Match Started');
       }
-    };
+      setCurrentTime(result.match_time.toFixed(0));  // Округляем время до целых секунд
+    } catch (error) {
+      console.error('Error fetching match time:', error);
+    }
+  };
 
-    const intervalId = setInterval(fetchCurrentTime, 1000);
+  const clearTrajectoryPoints = async () => {
+    try {
+      const response = await fetch('http://147.45.68.109:5000/api/clear_trajectory_points', { method: 'POST' });
+      const result = await response.json();
+      if (result.message === "Trajectory points cleared") {
+        console.log("Trajectory points cleared successfully");
+      } else {
+        console.log("Error clearing trajectory points");
+      }
+    } catch (error) {
+      console.error('Error clearing trajectory points:', error);
+    }
+  };
+
+  useEffect(() => {
+    const intervalId = setInterval(fetchMatchTime, 1000);
     return () => clearInterval(intervalId);
-  }, [matchStartTime]);
+  }, []);
 
   return (
     <div className='MatchControls'>
       <div className='MatchInfo'>
-        <Button className='MatchItem' onClick={startMatch} variant="outlined" color="success">Start Match</Button>
-        <Button className='MatchItem' onClick={endMatch} variant="outlined" color="error">End Match</Button>
+        <Button
+          className='MatchItem'
+          onClick={startMatch}
+          variant="outlined"
+          color="success"
+          disabled={matchStatus === 'Match Started'}
+        >
+          Start Match
+        </Button>
+        <Button
+          className='MatchItem'
+          onClick={endMatch}
+          variant="outlined"
+          color="error"
+          disabled={matchStatus === 'Not Started'}
+        >
+          End Match
+        </Button>
+        <Button
+          className='MatchItem'
+          onClick={clearTrajectoryPoints}
+          variant="outlined"
+          color="primary"
+        >
+          Clear Trajectory Points
+        </Button>
       </div>
       <div className='MatchInfo'>
         <p className='MatchItem'>Match Status: {matchStatus}</p>
-        <p className='MatchItem'>Elapsed Time: {currentTime}</p>
+        <p className='MatchItem'>Elapsed Time: {currentTime} seconds</p>
       </div>
     </div>
   );

@@ -3,6 +3,7 @@ import HeatMapCanvas from './HeatMap.js';
 import { Tabs, Tab } from '@mui/material';
 import { styled} from '@mui/material/styles';
 import PlayerTrajectories from './Trajectory/PlayerTrajectories.js';
+import MatchAnalytics from './MatchAnalytics.js'
 
 const StyledTabs = styled(Tabs)({
  marginTop:"15px",
@@ -43,11 +44,12 @@ const AfterMatch = () => {
         <StyledTab value='1' label="HeatMap" />
         <StyledTab value='2' label="Траектории и передвижение" />
         <StyledTab value='3' label="Ускорения и виражи" />
-        <StyledTab value='4' label="Топ игроков" />
+        <StyledTab value='4' label="Аналитика по матчу" />
       </StyledTabs>
 
       {selectedTab === '1' && <div><HeatMapCanvas /></div>}
       {selectedTab === '2' && <div><PlayerTrajectories /></div>}
+      {selectedTab === '4' && <div><MatchAnalytics /></div>}
     </div>
  );
 };

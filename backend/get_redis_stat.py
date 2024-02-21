@@ -2,7 +2,7 @@ import redis
 import pandas as pd
 
 # Подключение к Redis
-redis_host = '91.108.241.205'
+redis_host = '91.108.240.55'
 redis_port = 6379
 redis_db = 0
 redis_password = None  # Укажите пароль, если он у вас есть

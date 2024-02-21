@@ -29,7 +29,7 @@ match_running = False
 match_start_time = 0
 
 # Connect to Redis
-redis_client = redis.Redis(host='91.108.241.205', port=6379)
+redis_client = redis.Redis(host='91.108.240.55', port=6379)
 
 # Define the Redis key format for player data
 PLAYER_DATA_KEY_FORMAT = "player_data:{}"
@@ -40,11 +40,6 @@ def update_square_counts(player):
     square_x = int(player.x // square_width)
     square_y = int((field_height - player.y) // square_height)
 
-    # print(player)
-    # print(square_x, square_y)
-
-    # print([[sum(dictionary['count'] for dictionary in arr_dict) for arr_dict in row] for row in square_counts])
-
     checker = True
 
     for slov in square_counts[square_y][square_x]:
@@ -54,7 +49,6 @@ def update_square_counts(player):
             checker = False
             break
 
-    # print([[sum(dictionary['count'] for dictionary in arr_dict) for arr_dict in row] for row in square_counts])
 
     if checker:
         # print('CHEEEEk')
@@ -72,8 +66,6 @@ def process_csv_data(csv_data, timestamp_iterator):
 
             for _, row in timestamp_rows.iterrows():
                 player_id = row['id']
-                if not global_traj[player.id]:
-                    global_traj[player.id] = []
 
                 player = next((p for p in players_data if p.id == player_id), None)
 
@@ -111,7 +103,6 @@ def process_csv_data(csv_data, timestamp_iterator):
 
                 existing_player = Player.query.get(player.id)
                 if existing_player:
-                    # Применяем изменения
                     existing_player.lastX = player.lastX
                     existing_player.lastY = player.lastY
                     existing_player.x = player.x
@@ -141,7 +132,6 @@ def process_redis_data():
                 if key_type == b'hash':
                     raw_hash = redis_client.hgetall(key)
 
-                    # Преобразуйте хеш в словарь Python
                     data = {}
                     for k, v in raw_hash.items():
                         data[k.decode('utf-8')] = v.decode('utf-8')
@@ -153,7 +143,6 @@ def process_redis_data():
                     print(data)
                     player_id = int(data['id'])
 
-                # player_id = int(data['id'])
                 player = next((p for p in players_data if p.id == player_id), None)
 
 
@@ -186,7 +175,7 @@ def process_redis_data():
                             player.y = player.lastY
     
 
-                        if len(global_traj[player.id]) < 3:
+                        if len(global_traj[player.id]) < 6:
                             print('Траектория добавлена в сток')
                             global_traj[player.id].append({'x': player.x, 'y': player.y, 'order': len(global_traj[player.id])})
                         else:
@@ -198,6 +187,11 @@ def process_redis_data():
                         player.speed = int(distance / elapsed_time) if elapsed_time > 0 else 0
 
                         player.time = int(elapsed_time)
+
+                        try:
+                            update_square_counts(player)
+                        except BaseException:
+                            print("sorry")
                     
                     except:
                         print('Кринж в координатах')
@@ -276,10 +270,9 @@ def generate_points_for_frontend():
                         player.speed = int(distance / elapsed_time) if elapsed_time > 0 else 0
 
                         player.time = int(elapsed_time)
-
+                        
                         existing_player = Player.query.get(player.id)
                         if existing_player:
-                    # Применяем изменения
                             existing_player.lastX = player.lastX
                             existing_player.lastY = player.lastY
                             existing_player.x = player.x
@@ -294,6 +287,31 @@ def generate_points_for_frontend():
                             print(f"Error: Retrying...")
                             db.session.rollback()
 
+
+@app.route('/api/match_time', methods=['GET'])
+def get_match_time():
+    if match_running:
+        elapsed_time = time.time() - match_start_time
+        return jsonify({"match_time": elapsed_time})
+    else:
+        return jsonify({"match_time": 0})
+    
+@app.route('/api/match_start_time', methods=['GET'])
+def get_match_start_time():
+    global match_start_time
+    return jsonify({"match_start_time": match_start_time})
+
+@app.route("/api/clear_trajectory_points", methods=["POST"])
+def clear_trajectory_points():
+    try:
+        with app.app_context():
+            db.session.query(TrajectoryPoint).delete()
+            db.session.commit()
+
+            return jsonify({"message": "Trajectory points cleared"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 
@@ -351,6 +369,9 @@ def get_players_data():
             'time': player.time,
             'lastX': player.lastX,
             'lastY': player.lastY,
+            'position': player.position,
+            'grip': player.grip,
+            'visibility': player.visibility,
             'image': base64.b64encode(player.avatar).decode('utf-8') if player.avatar else "NO IMAGE",
             'traj': global_traj[player.id],
         })
@@ -399,39 +420,86 @@ def start_match():
             match_running = True
             match_start_time = time.time()
 
-            # # Читаем CSV файл
+            # Читаем CSV файл
             # csv_data = read_csv_data('fake.csv')  # Укажите путь к вашему CSV файлу
             # unique_timestamps = csv_data['timestamp'].unique()
 
 
             # timestamp_iterator = iter(unique_timestamps)
 
-            # # Обновляем данные из CSV файла
+            # Обновляем данные из CSV файла
             # process_csv_data(csv_data, timestamp_iterator)
 
-            
-
             # Перезапускаем job process_csv_data с новым вызовом
-            scheduler.add_job(process_redis_data, 'interval', seconds=3 )
+            scheduler.add_job(process_redis_data, 'interval', seconds=2 )
 
-    return jsonify({"message": "Match started"})
+            return jsonify({"message": "Match started"})
+        else:
+            return jsonify({"message": "Match already running"})
+        
+# Замените на ваш метод получения статистики матча
+@app.route('/api/match_analytics/', methods=['GET'])
+def get_match_analytics():
+    with app.app_context():
+        players = Player.query.all()
+        total_distance_online = sum(player.dist for player in players)
+
+
+    analytics_data = {
+        'matchId': 1,
+        'duration': time.time() - match_start_time,
+        'totalDistanceOnline': f'{total_distance_online:.2f} km',
+        # Добавьте другие поля статистики матча
+    }
+
+    return jsonify(analytics_data)
 
 @app.route('/api/end_match', methods=['POST'])
 def end_match():
     global match_running, match_start_time
+    if match_running:
+        match_running = False
+        match_start_time = 0
     
-    # Remove jobs from the scheduler
-    scheduler.remove_all_jobs()
+        # Remove jobs from the scheduler
+        scheduler.remove_all_jobs()
     
-    # Clear existing player data in Redis
-    for player in players_data:
-        redis_key = PLAYER_DATA_KEY_FORMAT.format(player.id)
-        redis_client.delete(redis_key)
+        # Clear existing player data in Redis
+        for player in players_data:
+            redis_key = PLAYER_DATA_KEY_FORMAT.format(player.id)
+            redis_client.delete(redis_key)
     
-    match_running = False
-    match_start_time = 0
+        match_running = False
+        match_start_time = 0
     
-    return jsonify({"message": "Match ended"})
+        return jsonify({"message": "Match ended"})
+    else:
+        return jsonify({"message": "Match not running"})
+
+@app.route('/api/player/<int:player_id>', methods=['GET'])
+def get_player_by_id(player_id):
+    with app.app_context():
+        player = Player.query.get(player_id)
+        if player:
+            player_data = {
+                'id': player.id,
+                'team': player.team,
+                'num': player.num,
+                'name': player.name,
+                'surname': player.surname,
+                'x': player.x,
+                'y': player.y,
+                'speed': player.speed,
+                'dist': player.dist,
+                'time': player.time,
+                'lastX': player.lastX,
+                'lastY': player.lastY,
+                'image': base64.b64encode(player.avatar).decode('utf-8') if player.avatar else "NO IMAGE",
+                'traj': global_traj[player.id],
+            }
+            return jsonify(player_data)
+        else:
+            return jsonify({"message": "NOOOOOO"})
 
 def main():
     global players_data

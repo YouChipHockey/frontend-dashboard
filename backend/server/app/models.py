@@ -14,6 +14,11 @@ class Player(db.Model):
     lastX = db.Column(db.Float)
     lastY = db.Column(db.Float)
     avatar = db.Column(db.LargeBinary)
+    chip_id = db.Column(db.Integer)
+    visibility = db.Column(db.Boolean, default=True)
+    position = db.Column(db.String(50))  # Добавлено новое поле "позиция"
+    grip = db.Column(db.String(50))  # Добавлено новое поле "хват"
+
     trajectory = db.relationship('TrajectoryPoint', backref='player', lazy=True)
 
 class TrajectoryPoint(db.Model):

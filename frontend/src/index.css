@@ -4,6 +4,7 @@
        url('./fonts/Gilroy-Regular.woff2') format('woff'); /* формат шрифта WOFF */
   font-weight: normal;
   font-style: normal;
+  
 }
 
 body {
@@ -16,6 +17,8 @@ body {
   background-color: #1A1A1A;
   color: white;
   font-family: 'Gilroy', sans-serif;
+  text-decoration: none !important;
+
 
 }
 

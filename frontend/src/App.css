@@ -1,5 +1,7 @@
 .App {
   text-align: center;
+  text-decoration: none;
+
 }
 .mapcontainer{
   width: 100%;
@@ -14,14 +16,48 @@
   justify-content: space-between;
 }
 .PlayerMainInfo{
+  text-decoration: none;
+  color: white;
   min-width:500px;
   border-radius: 20px;
   background-color: #333333;
   padding: 20px;
   display: flex;
+  justify-content: start;
+  gap: 45px;
+}
+
+.PlayerBodyDet{
+  display: grid;
+  grid-template-columns: auto auto auto auto;
   justify-content: space-between;
 }
+
+.PlayerStatDet{
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  justify-content: space-between;
+}
+
+.PlayerDet{
+  margin: 15px;
+  display: flex;
+  justify-content: center;
+  width: 95%;
+}
+
+.PlayerStartCard{
+  width: 100%;
+}
+
+.PlayerMainInfo:hover{
+  background-color: #757575;
+
+}
+
 .PlayerAvatar{
+  align-self: center;
   border-radius: 100px;
   width: 150px;
   height: 150px;
@@ -40,7 +76,9 @@
 }
 .PlayerHeader{
   display: flex;
-  justify-content: space-between;
+  gap: 15px;
+  font-size: 25px;
+  justify-content: start;
 }
 .PlayerAddInfo{
   min-width:500px;
@@ -79,6 +117,9 @@
 span.apexcharts-legend-text{
   color: white !important;
 }
+.apexcharts-tooltip{
+  color: black;
+}
 
 .custom-tooltip {
   background-color: #fff;
@@ -106,4 +147,15 @@ span.apexcharts-legend-text{
   background-color: red;
   margin: 5px;
   padding: 5px;
+}
+
+.meow{
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 25px;
+}
+
+.chartsPlayer{
+  display: flex;
+  justify-content: space-around;
 }

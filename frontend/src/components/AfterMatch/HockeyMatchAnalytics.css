@@ -1,0 +1,37 @@
+/* HockeyMatchAnalytics.css */
+
+.hockey-analytics-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Initially 3 columns */
+    gap: 10px;
+    max-width: 1200px;
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+  /* Media query for screens smaller than a certain width (adjust as needed) */
+  @media (max-width: 768px) {
+    .charts-grid {
+      grid-template-columns: repeat(2, 1fr); /* Change to 2 columns */
+    }
+  
+    .charts-grid > div:nth-child(4),
+    .charts-grid > div:nth-child(5) {
+      grid-column: span 2; /* Adjust column span for the 4th and 5th elements to span 2 columns */
+    }
+    
+    .charts-grid > div:nth-child(6),
+    .charts-grid > div:nth-child(7),
+    .charts-grid > div:nth-child(8) {
+      grid-column: span 1; /* Adjust column span for the 6th, 7th, and 8th elements to span 1 column */
+    }
+  }
+  
