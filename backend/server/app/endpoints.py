@@ -9,6 +9,8 @@ import copy
 import base64
 import redis  # Import the Redis library
 import json
+from sqlalchemy import func, case, desc
+
 
 from common.pereferences import DEBUG, PORT, HOST
 
@@ -380,9 +382,42 @@ def get_players_data():
     # print(players_data)
     return jsonify(players_data)
 
+from sqlalchemy import func
+
 @app.route('/api/square_counts', methods=['GET'])
 def get_square_counts():
+    square_counts = [[{"name": "", "count": 0, "top_players": []}] * num_squares_x for _ in range(num_squares_y)]
+    
+    with app.app_context():
+        # Query to get the counts and top players for each square
+        query = db.session.query(
+            func.floor(TrajectoryPoint.x / square_width).label('col'),
+            func.floor(TrajectoryPoint.y / square_width).label('row'),
+            func.count().label('count'),
+            func.group_concat(Player.name).label('top_players')
+        ).join(Player, TrajectoryPoint.player_id == Player.id).\
+        group_by('col', 'row').subquery()
+
+        # Get the results and update square_counts
+        results = db.session.query(query).all()
+        for result in results:
+            row_index = int(result.row)
+            col_index = int(result.col)
+
+            if 0 <= row_index < num_squares_y and 0 <= col_index < num_squares_x:
+                square_counts[row_index][col_index] = {
+                    "name": "",
+                    "count": result.count,
+                    "top_players": result.top_players.split(',') if result.top_players else []
+                }
+            else:
+                print(f"Ignoring result with out-of-range indices: row={result.row}, col={result.col}")
+
+    print(square_counts)
+
     return jsonify(square_counts)
+
+
 
 @app.route('/api/trajectories', methods=['GET'])
 def get_player_trajectories():
@@ -479,6 +514,46 @@ def end_match():
 @app.route('/api/player/<int:player_id>', methods=['GET'])
 def get_player_by_id(player_id):
     with app.app_context():
+        movements = db.session.query(
+        db.func.avg(TrajectoryPoint.x / 1280 * 60).label('avg_x'),
+        db.func.avg(TrajectoryPoint.y / 720 * 30).label('avg_y'),   
+        db.func.floor(TrajectoryPoint.time).label('minute')
+        ).filter_by(player_id=player_id).group_by('minute').all()
+
+    # Assuming you want to calculate speed as the Euclidean distance between consecutive positions
+        speeds = []
+        accelerations = 0
+        decelerations = 0
+
+        for i in range(1, len(movements)):
+            prev_movement = movements[i - 1]
+            current_movement = movements[i]
+
+            distance = ((current_movement.avg_x - prev_movement.avg_x)**2 + (current_movement.avg_y - prev_movement.avg_y)**2)**0.5
+
+            speed = distance / (current_movement.minute - prev_movement.minute) * 60
+
+
+
+            speeds.append({'minute': current_movement.minute, 'average_speed': speed})
+
+
+        print(speeds)
+
+        filtered_speed_data = [entry for entry in speeds if entry['average_speed'] <= 25]
+
+        for i in range(len(filtered_speed_data)):
+            if filtered_speed_data[i]['average_speed'] - filtered_speed_data[i - 1]['average_speed'] > 5:
+                accelerations += 1
+            elif filtered_speed_data[i]['average_speed'] - filtered_speed_data[i - 1]['average_speed'] > -5:
+                decelerations += 1
+
+        max_speed = max([speed['average_speed'] for speed in filtered_speed_data], default=0)
+        min_speed = min([speed['average_speed'] for speed in filtered_speed_data], default=0)
+        avg_speed = sum([speed['average_speed'] for speed in filtered_speed_data]) / len(speeds) if speeds else 0
+
+
+
         player = Player.query.get(player_id)
         if player:
             player_data = {
@@ -496,6 +571,21 @@ def get_player_by_id(player_id):
                 'lastY': player.lastY,
                 'image': base64.b64encode(player.avatar).decode('utf-8') if player.avatar else "NO IMAGE",
                 'traj': global_traj[player.id],
+                'speeds': filtered_speed_data,
+                'accelerations': accelerations,
+                'decelerations': decelerations,
+                'position': player.position,
+                'grip': player.grip,
+                'visibility': player.visibility,
+                'max_speed': int(max_speed),
+                'avg_speed': int(avg_speed),
+                'min_speed': int(min_speed) ,
+                'height': player.height ,
+                'weight': player.weight ,
+                'age': player.age ,
+                'birth_date': player.birth_date ,
+
+
             }
             return jsonify(player_data)
         else:

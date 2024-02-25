@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 const HockeyMatchAnalytics = ({ matchId }) => {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [playersData, setplayersData] = useState([]);
-  const serverUrl = 'http://147.45.68.109:5000/api/players';
+  const serverUrl = 'http://81.19.137.188:5000/api/players';
 
 
   useEffect(() => {

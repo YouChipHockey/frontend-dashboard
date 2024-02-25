@@ -47,43 +47,38 @@ const PlayerInfo = ({ match }) => {
   useEffect(() => {
     const fetchPlayerData = async () => {
       try {
-        const response = await fetch(`http://147.45.68.109:5000/api/player/${playerId}`);
+        const response = await fetch(`http://81.19.137.188:5000/api/player/${playerId}`);
         if (response.ok) {
-            const newPlayersData = await response.json();
-            console.log(newPlayersData);
-            setPlayerData(newPlayersData);
-        }else {
-                console.warn('Server responded with an error:', response.status);
-            }
+          const newPlayersData = await response.json();
+          console.log(newPlayersData);
+          setPlayerData(newPlayersData);
+
+          // Assuming newPlayersData contains speed-related information
+          const speedChartDataConfig = {
+            options: {
+              chart: {
+                id: 'speed-chart',
+              },
+              xaxis: {
+                categories: newPlayersData.speeds.map(entry => entry.minute),
+              },
+            },
+            series: [
+              {
+                name: 'Speed',
+                data: newPlayersData.speeds.map(entry => entry.average_speed),
+              },
+            ],
+          };
+
+          setChartData(speedChartDataConfig);
+        } else {
+          console.warn('Server responded with an error:', response.status);
+        }
       } catch (error) {
         console.error('Error fetching player data:', error);
       }
     };
-    const generateRandomData = () => {
-        const time = Array.from({ length: 60 }, (_, index) => `${index + 1}`);
-        const speed = time.map(() => Math.floor(Math.random() * 10)); // Генерируйте случайные значения скорости
-  
-        const chartDataConfig = {
-          options: {
-            chart: {
-              id: 'speed-chart',
-            },
-            xaxis: {
-              categories: time,
-            },
-          },
-          series: [
-            {
-              name: 'Speed',
-              data: speed,
-            },
-          ],
-        };
-  
-        setChartData(chartDataConfig);
-      };
-  
-      generateRandomData();  
 
     fetchPlayerData();
   }, [playerId]);
@@ -108,33 +103,33 @@ const PlayerInfo = ({ match }) => {
           <h3>Хват: {playerData.grip}</h3>
           <h3>Позиция: {playerData.position}</h3>
           <h3>Команда: {playerData.team}</h3>
-          <h3>Рост : </h3>
-          <h3>Дата рождения:</h3>
-          <h3>Вес: </h3>
-          <h3>Возраст: </h3>
+          <h3>Рост: {playerData.height}</h3>
+          <h3>Дата рождения: {playerData.birth_date}</h3>
+          <h3>Вес: {playerData.weight}</h3>
+          <h3>Возраст: {playerData.age}</h3>
         </div>
       </div>
     </div>
         <h1>Статистика игрока</h1>
         <div className='chartsPlayer'>
             <ApexCharts options={chartOptions} series={chartOptions.series} type="radar" height={450} width={500}  />
-            <ApexCharts options={chartData.options} series={chartData.series} type="line" height={350} width={700}/>
+            <ApexCharts options={chartData.options} series={chartData.series} type="line" height={350} width={900}/>
         </div>
         <h1>Показатели катания</h1>
         <div className='PlayerMainInfo'>
         <div className='PlayerStatDet'>
           <h3>Cр. скорость:
-          {playerData.speed} км/ч</h3>
+          {playerData.avg_speed} км/ч</h3>
           <h3>Макс. скорость:
-          {playerData.speed} км/ч</h3>
+          {playerData.max_speed} км/ч</h3>
           <h3>Ускорений:
--</h3>
+          {playerData.accelerations}</h3>
           <h3>Торможений:
--</h3>
+          {playerData.decelerations}</h3>
           <h3>Время для макс. скор.:
 - с.</h3>
           <h3>Виражей:
-7</h3>
+-</h3>
           <h3>Время выпол.Виража:
 -</h3>
 
@@ -148,7 +143,7 @@ const PlayerInfo = ({ match }) => {
 {playerData.dist} м.</h3>
 
 <h3>Время:
-{playerData.time} м.</h3>
+{playerData.time} с.</h3>
 
 <h3>Макс. угол наклона:
 -</h3>

@@ -8,7 +8,7 @@ const MatchControl = () => {
 
   const startMatch = async () => {
     try {
-      const response = await fetch('http://147.45.68.109:5000/api/start_match', { method: 'POST' });
+      const response = await fetch('http://81.19.137.188:5000/api/start_match', { method: 'POST' });
       const result = await response.json();
       if (result.message === "Match started") {
         setMatchStartTime(new Date());
@@ -23,7 +23,7 @@ const MatchControl = () => {
 
   const endMatch = async () => {
     try {
-      const response = await fetch('http://147.45.68.109:5000/api/end_match', { method: 'POST' });
+      const response = await fetch('http://81.19.137.188:5000/api/end_match', { method: 'POST' });
       const result = await response.json();
       if (result.message === "Match ended") {
         setMatchStartTime(null);
@@ -38,7 +38,7 @@ const MatchControl = () => {
 
   const fetchMatchTime = async () => {
     try {
-      const response = await fetch('http://147.45.68.109:5000/api/match_time');
+      const response = await fetch('http://81.19.137.188:5000/api/match_time');
       const result = await response.json();
       if (result.match_time.toFixed(0) !== 0) {
           setMatchStatus('Match Started');
@@ -51,7 +51,7 @@ const MatchControl = () => {
 
   const clearTrajectoryPoints = async () => {
     try {
-      const response = await fetch('http://147.45.68.109:5000/api/clear_trajectory_points', { method: 'POST' });
+      const response = await fetch('http://81.19.137.188:5000/api/clear_trajectory_points', { method: 'POST' });
       const result = await response.json();
       if (result.message === "Trajectory points cleared") {
         console.log("Trajectory points cleared successfully");

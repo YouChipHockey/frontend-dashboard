@@ -1,7 +1,8 @@
 from app import db
 
 class Player(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer)
+    newid = db.Column(db.Integer, primary_key=True)
     team = db.Column(db.Integer)
     num = db.Column(db.String(10))
     name = db.Column(db.String(50))
@@ -19,6 +20,12 @@ class Player(db.Model):
     position = db.Column(db.String(50))  # Добавлено новое поле "позиция"
     grip = db.Column(db.String(50))  # Добавлено новое поле "хват"
 
+    height = db.Column(db.Float)
+    weight = db.Column(db.Float)
+    age = db.Column(db.Integer)
+    birth_date = db.Column(db.Date)
+
+
     trajectory = db.relationship('TrajectoryPoint', backref='player', lazy=True)
 
 class TrajectoryPoint(db.Model):
@@ -26,4 +33,4 @@ class TrajectoryPoint(db.Model):
     time = db.Column(db.Float)
     x = db.Column(db.Float)
     y = db.Column(db.Float)
-    player_id = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('player.newid'), nullable=False)

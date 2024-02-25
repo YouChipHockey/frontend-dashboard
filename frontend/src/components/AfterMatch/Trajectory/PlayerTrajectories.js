@@ -3,16 +3,19 @@ import TimelineSlider from './TimelineSlider';
 
 const PlayerTrajectories = () => {
   const [playerTrajectories, setPlayerTrajectories] = useState({});
+  const [originalTrajectories, setOriginalTrajectories] = useState({});
+
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
   const [maxTime, setMaxTime] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://147.45.68.109:5000/api/trajectories');
+        const response = await fetch('http://81.19.137.188:5000/api/trajectories');
         if (response.ok) {
           const trajectoriesData = await response.json();
           setPlayerTrajectories(trajectoriesData);
+          setOriginalTrajectories(trajectoriesData); 
           console.log(trajectoriesData)
 
           // Calculate the max time dynamically
@@ -33,6 +36,12 @@ const PlayerTrajectories = () => {
   const drawPlayerCircles = (ctx) => {
     for (const playerId in playerTrajectories) {
       const playerData = playerTrajectories[playerId];
+      
+      if (!playerData || !playerData.trajectory || playerData.trajectory.length === 0) {
+        console.error(`Invalid data for playerId: ${playerId}`);
+        continue;
+      }
+  
       const x = playerData.trajectory[playerData.trajectory.length - 1].x;
       const y = playerData.trajectory[playerData.trajectory.length - 1].y;
 
@@ -70,7 +79,7 @@ const PlayerTrajectories = () => {
     }
   };
 
-  const drawSmoothTrajectory = (ctx, points) => {
+  const drawSmoothTrajectory = (ctx, points, playerData) => {
     const tension = 0.4;
     const numOfSegments = 16;
 
@@ -90,7 +99,7 @@ const PlayerTrajectories = () => {
       points[points.length - 1].y
     );
 
-    ctx.strokeStyle = 'rgba(46, 49, 143, 0.5)';
+    ctx.strokeStyle = playerData === 1 ? 'rgba(255, 0, 0, 0.5)' : playerData === 2 ? '#2E318F': '#000000';
     ctx.lineWidth = 5;
     ctx.stroke();
   };
@@ -215,9 +224,10 @@ const PlayerTrajectories = () => {
 
     if (selectedPlayerId && playerTrajectories[selectedPlayerId]) {
       const playerTrajectory = playerTrajectories[selectedPlayerId].trajectory;
+      const playerData = playerTrajectories[selectedPlayerId].team;
 
       if (playerTrajectory.length > 1) {
-        drawSmoothTrajectory(ctx, playerTrajectory);
+        drawSmoothTrajectory(ctx, playerTrajectory, playerData);
       }
     }
   };
@@ -239,15 +249,26 @@ const PlayerTrajectories = () => {
 
     for (const playerId in playerTrajectories) {
       const playerData = playerTrajectories[playerId];
-      const playerX = playerData.trajectory[playerData.trajectory.length - 1].x;
-      const playerY = playerData.trajectory[playerData.trajectory.length - 1].y;
+      const playerTrajectory = playerData.trajectory;
 
-      const distance = Math.sqrt((x - playerX) ** 2 + (y - playerY) ** 2);
+      if (playerTrajectory && playerTrajectory.length > 0) {
+          const lastPoint = playerTrajectory[playerTrajectory.length - 1];
+          const playerX = lastPoint.x;
+          const playerY = lastPoint.y;
 
-      if (distance <= 24) {
-        handlePlayerClick(playerId);
-        return;
-      }
+          const distance = Math.sqrt((x - playerX) ** 2 + (y - playerY) ** 2);
+
+      
+
+          if (distance <= 24) {
+            handlePlayerClick(playerId);
+            return;
+          }
+        
+        
+        } else {
+          console.error('Invalid trajectory data for playerId:', playerId);
+        }
     }
 
     setSelectedPlayerId(null);
@@ -255,29 +276,32 @@ const PlayerTrajectories = () => {
 
   const onHandleSliderChange = async (newValues) => {
     try {
-
-      const response = await fetch('http://147.45.68.109:5000/api/filtered_trajectories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          start_time: newValues[0],
-          end_time: newValues[1],
-        }),
-      });
-
-      if (response.ok) {
-        const trajectoriesData = await response.json();
-        console.log(trajectoriesData)
-        setPlayerTrajectories(trajectoriesData);
-      } else {
-        console.error('Error fetching player trajectories:', response.status);
-      }
+      const trajectoriesArray = Object.values(originalTrajectories);
+      const filteredTrajectories = filterTrajectoriesByTime(trajectoriesArray, newValues);
+      setPlayerTrajectories(filteredTrajectories);
     } catch (error) {
-      console.error('Error fetching player trajectories:', error);
+      console.error('Error filtering player trajectories:', error);
     }
   };
+  
+  // Function to filter trajectories by time
+  const filterTrajectoriesByTime = (trajectories, timeRange) => {
+    if (!Array.isArray(trajectories)) {
+      console.error('Invalid data format: trajectories is not an array');
+      return trajectories;
+    }
+    // Assuming each trajectory has a time property
+    return trajectories.map(playerData => {
+      const filteredTrajectory = playerData.trajectory.filter(point => {
+        const time = point.time; // Adjust this based on your actual data structure
+        return time >= timeRange[0] && time <= timeRange[1];
+      });
+  
+      // Update the playerData with the filtered trajectory
+      return { ...playerData, trajectory: filteredTrajectory };
+    });
+  };
+  
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center'}}>

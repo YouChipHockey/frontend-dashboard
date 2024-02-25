@@ -5,8 +5,7 @@ const generateData = (raw_array) => {
   const data = [];
 
   for (var element of raw_array) {
-    let totalCount = element.reduce((sum, c) => sum + c.count, 0);
-    console.log(totalCount);
+    let totalCount = element.count;
 
     data.push({
       x: 0,
@@ -15,7 +14,6 @@ const generateData = (raw_array) => {
     });
   }
 
-  console.log(data);
 
   return data;
 };
@@ -24,7 +22,7 @@ const HeatMap = () => {
   const [heatmapData, setHeatmapData] = useState([]);
   const [fetchData, setfetchData] = useState([]);
   const [playerData, setplayerData] = useState([]);
-  const serverUrl = 'http://147.45.68.109:5000/api/square_counts'
+  const serverUrl = 'http://81.19.137.188:5000/api/square_counts'
   const canvasRef = useRef(null);
 
   const generateHeatmapData = (data) => {
@@ -45,13 +43,13 @@ const HeatMap = () => {
       const response = await fetch(serverUrl);
       if (response.ok) {
         const data = await response.json()
+        console.log(data);
         generateHeatmapData(data);
         setplayerData(data);
-        console.log(data);
 
         let my_data = data.map(row => row && row.map(cell => {
           if (cell) {
-            const totalCount = cell.reduce((sum, c) => sum + c.count, 0);
+            const totalCount = cell.count;
             return [totalCount]; // Возвращаем новый массив с суммарным значением count
           }
           return cell; // Возвращаем неизмененный cell, если он пустой или не существует
@@ -198,28 +196,41 @@ const HeatMap = () => {
       enabled: true,
       followCursor: true,
       custom: ({ seriesIndex, dataPointIndex, w }) => {
-        // Получаем массив игроков
-        let players = playerData[seriesIndex][dataPointIndex];
+        if (
+          playerData &&
+          playerData.length > seriesIndex &&
+          playerData[seriesIndex] &&
+          playerData[seriesIndex].length > dataPointIndex &&
+          playerData[seriesIndex][dataPointIndex]
+        ) {
+          let players = playerData[seriesIndex][dataPointIndex].top_players;
     
-        // Сортируем массив по убыванию count
-        let sortedPlayers = players.sort((a, b) => b.count - a.count);
-        console.log(sortedPlayers[0].team)
+          if (players) {
+            let maxCount = Math.max(...fetchData[seriesIndex]);
     
-        // Формируем строку топ игроков с отступами и обрамлением
-        let topPlayersString = sortedPlayers.slice(0, 5)
-            .map(player => player.name != '' ?`
-                <div class="player-item">
-                    ${player.team == 1 ? '<span class="team-blue"></span>' : '<span class="team-red"></span>'}
-                    ${player.name}: ${(player.count / Math.max(...fetchData.map(row => Math.max(...row)))) * 100} %
-                </div>
-            `: '')
-            .join('');
+            let topPlayersString = players.slice(0, 5)
+              .map(player => player !== '' ?
+                `<div >
+                  '<span class=></span>'
+                  ${player}                
+                  </div>`
+                : '')
+              .join('');
     
-        // Возвращаем HTML для тултипа
-        return `
-            <div class="custom-tooltip">
+            return `
+              <div class="custom-tooltip">
                 ${topPlayersString}
-            </div>`;
+              </div>`;
+          } else {
+            console.error("Invalid or empty players array:", players);
+            return "";
+          }
+        } else {
+          console.error("Invalid seriesIndex or dataPointIndex:", seriesIndex, dataPointIndex);
+          return "";
+        }
+    
+
     }
     
     
