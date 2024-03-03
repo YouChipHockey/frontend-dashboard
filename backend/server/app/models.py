@@ -32,4 +32,4 @@ class TrajectoryPoint(db.Model):
     time = db.Column(db.Float)
     x = db.Column(db.Float)
     y = db.Column(db.Float)
-    player_id = db.Column(db.Integer, db.ForeignKey('player.newid'), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
