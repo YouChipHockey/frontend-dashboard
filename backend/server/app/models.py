@@ -1,8 +1,7 @@
 from app import db
 
 class Player(db.Model):
-    id = db.Column(db.Integer)
-    newid = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     team = db.Column(db.Integer)
     num = db.Column(db.String(10))
     name = db.Column(db.String(50))
