@@ -5,6 +5,6 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 CORS(app)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://main_admin:Accessors231@46.226.166.162/youchip'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://yc_admin:00000000@5.182.87.23/YC'
 db = SQLAlchemy(app) 
 from app import endpoints

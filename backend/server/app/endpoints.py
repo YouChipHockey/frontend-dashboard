@@ -394,7 +394,7 @@ def get_square_counts():
             func.floor(TrajectoryPoint.x / square_width).label('col'),
             func.floor(TrajectoryPoint.y / square_width).label('row'),
             func.count().label('count'),
-            func.group_concat(Player.name).label('top_players')
+            func.group_concat(Player.num).label('top_players')
         ).join(Player, TrajectoryPoint.player_id == Player.id).\
         group_by('col', 'row').subquery()
 
