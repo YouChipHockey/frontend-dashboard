@@ -7,7 +7,7 @@ import random
 import time
 import copy
 import base64
-import redis  # Import the Redis library
+import redis
 import json
 from sqlalchemy import func, case, desc
 
@@ -31,7 +31,7 @@ match_running = False
 match_start_time = 0
 
 # Connect to Redis
-redis_client = redis.Redis(host='91.108.240.55', port=6379)
+redis_client = redis.Redis(host='77.221.156.184', port=6379)
 
 # Define the Redis key format for player data
 PLAYER_DATA_KEY_FORMAT = "player_data:{}"
@@ -53,7 +53,6 @@ def update_square_counts(player):
 
 
     if checker:
-        # print('CHEEEEk')
         square_counts[square_y][square_x] = [copy.deepcopy({"name": f"{player.name} {player.surname}", "count": 1, "team": player.team})]
 
 def read_csv_data(file_path):

@@ -2,7 +2,7 @@ import redis
 import time
 
 r = redis.Redis(
-    host='91.108.240.55',
+    host='77.221.156.184',
     port=6379,
 )
 
@@ -24,3 +24,8 @@ for key in keys:
     elif key_type == b'hash':
         print(f'Key: {key}, Values: {r.hgetall(key)}')
     
+
+r.delete('backup1')
+r.delete('backup2')
+r.delete('backup3')
+r.delete('backup4')

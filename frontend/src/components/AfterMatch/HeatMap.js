@@ -22,7 +22,7 @@ const HeatMap = () => {
   const [heatmapData, setHeatmapData] = useState([]);
   const [fetchData, setfetchData] = useState([]);
   const [playerData, setplayerData] = useState([]);
-  const serverUrl = 'http://5.182.87.23:5000/api/square_counts'
+  const serverUrl = 'http://77.221.156.184:5000/api/square_counts'
   const canvasRef = useRef(null);
 
   const generateHeatmapData = (data) => {

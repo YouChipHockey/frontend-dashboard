@@ -51,7 +51,7 @@ const MatchControl = () => {
 
   const clearTrajectoryPoints = async () => {
     try {
-      const response = await fetch('http://5.182.87.23:5000/api/clear_trajectory_points', { method: 'POST' });
+      const response = await fetch('http://77.221.156.184:5000/api/clear_trajectory_points', { method: 'POST' });
       const result = await response.json();
       if (result.message === "Trajectory points cleared") {
         console.log("Trajectory points cleared successfully");

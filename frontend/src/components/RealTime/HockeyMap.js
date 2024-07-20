@@ -43,7 +43,7 @@ const PlayerInfo = ({player}) => (
 const HockeyMap = () => {
   const canvasRef = useRef(null);
   const playersDataRef = useRef([]);
-  const serverUrl = 'http://5.182.87.23:5000/api/players';
+  const serverUrl = 'http://77.221.156.184:5000/api/players';
   const [animationFrame, setAnimationFrame] = useState(null);
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 });
   const [selectedPlayer, setSelectedPlayer] = useState(null);

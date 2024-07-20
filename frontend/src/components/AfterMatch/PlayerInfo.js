@@ -47,7 +47,7 @@ const PlayerInfo = ({ match }) => {
   useEffect(() => {
     const fetchPlayerData = async () => {
       try {
-        const response = await fetch(`http://5.182.87.23:5000/api/player/${playerId}`);
+        const response = await fetch(`http://77.221.156.184:5000/api/player/${playerId}`);
         if (response.ok) {
           const newPlayersData = await response.json();
           console.log(newPlayersData);
